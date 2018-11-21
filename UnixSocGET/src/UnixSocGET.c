@@ -12,6 +12,6 @@
 #include <stdlib.h>
 
 int main(void) {
-	puts("SocGET"); /* prints SocGET */
+	puts("Mark Is Cool"); /* prints SocGET */
 	return EXIT_SUCCESS;
 }
