@@ -9,93 +9,45 @@
  ============================================================================
  */
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <stdio.h>
+   #include <sys/types.h>
+   #include <sys/socket.h>
+   #include <sys/un.h>
+   #include <stdio.h>
 
-#define NSTRS       3           /* no. of strings  */
-#define ADDRESS     "mysocket"  /* addr to connect */
 
-/*
- * Strings we send to the server.
- */
-char *strs[NSTRS] = {
-    "This is the first string from the client.\n",
-    "This is the second string from the client.\n",
-    "This is the third string from the client.\n"
-};
+   #define DATA "Half a league, half a league . . ."
 
-main()
-{
-    char c;
-    FILE *fp;
-    register int i, s, len;
-    struct sockaddr_un saun;
 
-    /*
-     * Get a socket to work with.  This socket will
-     * be in the UNIX domain, and will be a
-     * stream socket.
-     */
-    if ((s = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
-        perror("client: socket");
-        exit(1);
-    }
+ main(argc, argv)
+       int argc;
+       char *argv[];
+       {
+    	   int sock;
+    	   struct sockaddr_un server;
+    	   char buf[1024];
 
-    /*
-     * Create the address we will be connecting to.
-     */
-    saun.sun_family = AF_UNIX;
-    strcpy(saun.sun_path, ADDRESS);
 
-    /*
-     * Try to connect to the address.  For this to
-     * succeed, the server must already have bound
-     * this address, and must have issued a listen()
-     * request.
-     *
-     * The third argument indicates the "length" of
-     * the structure, not just the length of the
-     * socket name.
-     */
-    len = sizeof(saun.sun_family) + strlen(saun.sun_path);
+    	   if (argc < 2) {
+    		   printf("usage:%s <pathname>", argv[0]);
+    		   exit(1);
+    	   }
 
-    if (connect(s, &saun, len) < 0) {
-        perror("client: connect");
-        exit(1);
-    }
 
-    /*
-     * We'll use stdio for reading
-     * the socket.
-     */
-    fp = fdopen(s, "r");
+    	   sock = socket(AF_UNIX, SOCK_STREAM, 0);
+    	   if (sock < 0) {
+    		   perror("opening stream socket");
+    		   exit(1);
+    	   }
+     	server.sun_family = AF_UNIX;
+     	strcpy(server.sun_path, argv[1]);
 
-    /*
-     * First we read some strings from the server
-     * and print them out.
-     */
-    for (i = 0; i < NSTRS; i++) {
-        while ((c = fgetc(fp)) != EOF) {
-            putchar(c);
 
-            if (c == '\n')
-                break;
-        }
-    }
-
-    /*
-     * Now we send some strings to the server.
-     */
-    for (i = 0; i < NSTRS; i++)
-        send(s, strs[i], strlen(strs[i]), 0);
-
-    /*
-     * We can simply use close() to terminate the
-     * connection, since we're done with both sides.
-     */
-    close(s);
-
-    exit(0);
-}
+     	if (connect(sock, (struct sockaddr *) &server, sizeof(struct sockaddr_un)) < 0) {
+     		close(sock);
+     		perror("connecting stream socket");
+     		exit(1);
+     	}
+     	if (write(sock, DATA, sizeof(DATA)) < 0)
+     		perror("writing on stream socket");
+     	close(sock);
+       }
