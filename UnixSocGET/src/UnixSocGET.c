@@ -15,7 +15,7 @@
    #include <stdio.h>
 
 
-   #define DATA "Half a league, half a league . . ."
+   #define DATA "GET /devices HTTP/1.1"
 
 
  main(argc, argv)
