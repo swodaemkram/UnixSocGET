@@ -9,45 +9,51 @@
  ============================================================================
  */
 
-   #include <sys/types.h>
-   #include <sys/socket.h>
-   #include <sys/un.h>
-   #include <stdio.h>
+#include <stdio.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+#include <string.h>
 
 
-   #define DATA "GET /devices HTTP/1.1"
 
 
- main(argc, argv)
-       int argc;
-       char *argv[];
-       {
-    	   int sock;
-    	   struct sockaddr_un server;
-    	   char buf[1024];
+int main(void)
+{
+ struct sockaddr_un address;
+ int  socket_fd, nbytes;
+ char buffer[256];
 
+ socket_fd = socket(PF_UNIX, SOCK_STREAM, 0);
+ if(socket_fd < 0)
+ {
+  printf("socket() failed\n");
+  return 1;
+ }
 
-    	   if (argc < 2) {
-    		   printf("usage:%s <pathname>", argv[0]);
-    		   exit(1);
-    	   }
+ /* start with a clean address structure */
+ memset(&address, 0, sizeof(struct sockaddr_un));
 
+ address.sun_family = AF_UNIX;
+ snprintf(address.sun_path,  "./demo_socket");
 
-    	   sock = socket(AF_UNIX, SOCK_STREAM, 0);
-    	   if (sock < 0) {
-    		   perror("opening stream socket");
-    		   exit(1);
-    	   }
-     	server.sun_family = AF_UNIX;
-     	strcpy(server.sun_path, argv[1]);
+ if(connect(socket_fd,
+            (struct sockaddr *) &address,
+            sizeof(struct sockaddr_un)) != 0)
+ {
+  printf("connect() failed\n");
+  return 1;
+ }
 
+ nbytes = snprintf(buffer, 256, "hello from a client");
+ write(socket_fd, buffer, nbytes);
 
-     	if (connect(sock, (struct sockaddr *) &server, sizeof(struct sockaddr_un)) < 0) {
-     		close(sock);
-     		perror("connecting stream socket");
-     		exit(1);
-     	}
-     	if (write(sock, DATA, sizeof(DATA)) < 0)
-     		perror("writing on stream socket");
-     	close(sock);
-       }
+ nbytes = read(socket_fd, buffer, 256);
+ buffer[nbytes] = 0;
+
+ printf("MESSAGE FROM SERVER: %s\n", buffer);
+
+ close(socket_fd);
+
+ return 0;
+}
